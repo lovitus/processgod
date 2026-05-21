@@ -58,6 +58,9 @@
     <system:String x:Key="CsvSaveFailed">CSV 保存失败，共 {0} 个错误：&#x0a;{1}</system:String>
     <system:String x:Key="CsvSaveSucceeded">CSV 已保存。新增：{0}，更新：{1}，未变化：{2}，通知服务：{3}。</system:String>
     <system:String x:Key="CsvImportFailed">CSV 导入失败，共 {0} 个错误：&#x0a;{1}</system:String>
+    <system:String x:Key="CsvImportException">CSV 导入失败：{0}</system:String>
+    <system:String x:Key="CsvSaveException">CSV 保存失败：{0}</system:String>
     <system:String x:Key="CsvExportSucceeded">CSV 已导出。</system:String>
+    <system:String x:Key="CsvExportException">CSV 导出失败：{0}</system:String>
 
 </ResourceDictionary>

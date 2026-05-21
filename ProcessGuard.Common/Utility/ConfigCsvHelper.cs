@@ -124,6 +124,55 @@ namespace ProcessGuard.Common.Utility
             return result;
         }
 
+        public static string DecodeCsvBytes(byte[] bytes)
+        {
+            bytes = bytes ?? new byte[0];
+
+            if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+            {
+                return new UTF8Encoding(false, true).GetString(bytes, 3, bytes.Length - 3);
+            }
+
+            if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
+            {
+                return Encoding.Unicode.GetString(bytes, 2, bytes.Length - 2);
+            }
+
+            if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+            {
+                return Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
+            }
+
+            if (LooksLikeUtf16(bytes, false))
+            {
+                return Encoding.Unicode.GetString(bytes);
+            }
+
+            if (LooksLikeUtf16(bytes, true))
+            {
+                return Encoding.BigEndianUnicode.GetString(bytes);
+            }
+
+            var strictUtf8 = new UTF8Encoding(false, true);
+            if (TryDecode(bytes, strictUtf8, out var text))
+            {
+                return text;
+            }
+
+            // Excel on Chinese Windows commonly saves CSV as ANSI code page 936
+            // (GBK / GB2312 compatible). GB18030 is a superset, so try it first.
+            foreach (var codePage in new[] { 54936, 936, 950 })
+            {
+                Encoding encoding;
+                if (TryGetEncoding(codePage, out encoding) && TryDecode(bytes, encoding, out text))
+                {
+                    return text;
+                }
+            }
+
+            return Encoding.Default.GetString(bytes);
+        }
+
         public static ObservableCollection<ConfigCsvRow> ToRows(IEnumerable<ConfigItem> configItems)
         {
             var rows = new ObservableCollection<ConfigCsvRow>();
@@ -388,6 +437,56 @@ namespace ProcessGuard.Common.Utility
             return false;
         }
 
+        private static bool LooksLikeUtf16(byte[] bytes, bool bigEndian)
+        {
+            if (bytes.Length < 8)
+            {
+                return false;
+            }
+
+            var pairs = bytes.Length / 2;
+            var zeroCount = 0;
+            var zeroIndex = bigEndian ? 0 : 1;
+
+            for (var i = 0; i < pairs; i++)
+            {
+                if (bytes[i * 2 + zeroIndex] == 0)
+                {
+                    zeroCount++;
+                }
+            }
+
+            return zeroCount >= pairs * 3 / 5;
+        }
+
+        private static bool TryGetEncoding(int codePage, out Encoding encoding)
+        {
+            encoding = null;
+            try
+            {
+                encoding = Encoding.GetEncoding(codePage, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryDecode(byte[] bytes, Encoding encoding, out string text)
+        {
+            text = null;
+            try
+            {
+                text = encoding.GetString(bytes);
+                return true;
+            }
+            catch (DecoderFallbackException)
+            {
+                return false;
+            }
+        }
+
         private static bool AreEqual(ConfigItem left, ConfigItem right)
         {
             return string.Equals(NormalizeGuidOrEmpty(left.Id), NormalizeGuidOrEmpty(right.Id), StringComparison.OrdinalIgnoreCase)
@@ -501,9 +600,12 @@ namespace ProcessGuard.Common.Utility
                             continue;
                         }
 
-                        inQuotes = false;
-                        i++;
-                        continue;
+                        if (i + 1 >= csv.Length || csv[i + 1] == ',' || csv[i + 1] == '\r' || csv[i + 1] == '\n')
+                        {
+                            inQuotes = false;
+                            i++;
+                            continue;
+                        }
                     }
 
                     if (ch == '\n')
@@ -517,7 +619,14 @@ namespace ProcessGuard.Common.Utility
 
                 if (ch == '"')
                 {
-                    inQuotes = true;
+                    if (field.Length == 0)
+                    {
+                        inQuotes = true;
+                    }
+                    else
+                    {
+                        field.Append(ch);
+                    }
                     i++;
                     continue;
                 }

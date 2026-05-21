@@ -32,6 +32,10 @@ The configuration UI now includes a CSV editor for backup-friendly batch changes
 
 CSV editing keeps the JSON configuration file as the source used by the app and service. When saving, unchanged rows are ignored, changed rows are updated, and rows with a blank or previously unknown valid `Id` are added. Rows that are missing from the CSV are not deleted. If the service is running, only the rows that need to take effect are sent through the existing service command channel; the service is not restarted.
 
+CSV import accepts common Chinese CSV encodings, including UTF-8, UTF-16, GB18030, GBK/GB2312, and Big5. If the file is temporarily held open by Excel or sync software, the importer will try to read it in shared mode and show an error message instead of closing the app.
+
+When importing command lines, quotes and shell characters inside fields are preserved. For example, startup parameters such as `/K "ping baidu.com -n 10" & echo done` remain unchanged after CSV import.
+
 
 
 ## 📕Configuration Items

@@ -58,6 +58,9 @@
     <system:String x:Key="CsvSaveFailed">CSV save failed. {0} error(s):&#x0a;{1}</system:String>
     <system:String x:Key="CsvSaveSucceeded">CSV saved. Added: {0}, Updated: {1}, Unchanged: {2}, Service notifications: {3}.</system:String>
     <system:String x:Key="CsvImportFailed">CSV import failed. {0} error(s):&#x0a;{1}</system:String>
+    <system:String x:Key="CsvImportException">CSV import failed: {0}</system:String>
+    <system:String x:Key="CsvSaveException">CSV save failed: {0}</system:String>
     <system:String x:Key="CsvExportSucceeded">CSV exported.</system:String>
+    <system:String x:Key="CsvExportException">CSV export failed: {0}</system:String>
 
 </ResourceDictionary>

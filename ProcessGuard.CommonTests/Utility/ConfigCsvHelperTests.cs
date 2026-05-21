@@ -3,6 +3,7 @@ using ProcessGuard.Common.Models;
 using ProcessGuard.Common.Utility;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace ProcessGuard.Common.Utility.Tests
 {
@@ -37,6 +38,76 @@ namespace ProcessGuard.Common.Utility.Tests
             Assert.AreEqual("服务,\"一\"", parsed.Rows[0].ProcessName);
             Assert.AreEqual("first\r\nsecond", parsed.Rows[0].StartupParams);
             Assert.AreEqual("true", parsed.Rows[0].Minimize);
+        }
+
+        [TestMethod]
+        public void Parse_PreservesCommandQuotesInStartupParams()
+        {
+            var csv = "Id,ProcessName,EXEFullPath,StartupParams,OnlyOpenOnce,Minimize,NoWindow,Started,CronExpression,StopBeforeCronExec\r\n"
+                + ",cmd,C:\\Windows\\System32\\cmd.exe,/K \"ping baidu.com -n 10\" & echo done,false,false,true,false,,true\r\n";
+
+            var parsed = ConfigCsvHelper.Parse(csv);
+
+            Assert.AreEqual(0, parsed.Errors.Count);
+            Assert.AreEqual("/K \"ping baidu.com -n 10\" & echo done", parsed.Rows[0].StartupParams);
+        }
+
+        [TestMethod]
+        public void Parse_PreservesEscapedQuotesInQuotedStartupParams()
+        {
+            var csv = "Id,ProcessName,EXEFullPath,StartupParams,OnlyOpenOnce,Minimize,NoWindow,Started,CronExpression,StopBeforeCronExec\r\n"
+                + ",cmd,C:\\Windows\\System32\\cmd.exe,\"/K \"\"ping baidu.com -n 10\"\" & echo done\",false,false,true,false,,true\r\n";
+
+            var parsed = ConfigCsvHelper.Parse(csv);
+
+            Assert.AreEqual(0, parsed.Errors.Count);
+            Assert.AreEqual("/K \"ping baidu.com -n 10\" & echo done", parsed.Rows[0].StartupParams);
+        }
+
+        [TestMethod]
+        public void ExportAndParse_RoundTripsAllSpecialCharacters()
+        {
+            var items = new[]
+            {
+                new ConfigItem
+                {
+                    Id = "aabbccdd11223344aabbccdd11223344",
+                    ProcessName = "svc",
+                    EXEFullPath = @"C:\app.exe",
+                    StartupParams = @"--pass=!@#$%^&*() --token=abc,def --arg=""quoted""",
+                    OnlyOpenOnce = false,
+                    Minimize = false,
+                    NoWindow = false,
+                    Started = false,
+                    CronExpression = string.Empty,
+                    StopBeforeCronExec = false
+                }
+            };
+
+            var csv = ConfigCsvHelper.Export(items);
+            var parsed = ConfigCsvHelper.Parse(csv);
+
+            Assert.AreEqual(0, parsed.Errors.Count);
+            Assert.AreEqual(1, parsed.Rows.Count);
+            Assert.AreEqual(@"--pass=!@#$%^&*() --token=abc,def --arg=""quoted""", parsed.Rows[0].StartupParams);
+        }
+
+        [TestMethod]
+        public void DecodeCsvBytes_DetectsChineseCsvEncodings()
+        {
+            var csv = "Id,ProcessName,EXEFullPath,StartupParams,OnlyOpenOnce,Minimize,NoWindow,Started,CronExpression,StopBeforeCronExec\r\n,中文服务,C:\\app.exe,,false,false,false,false,,true\r\n";
+
+            Assert.AreEqual(csv, ConfigCsvHelper.DecodeCsvBytes(new UTF8Encoding(true).GetBytes(csv)));
+            Assert.AreEqual(csv, ConfigCsvHelper.DecodeCsvBytes(Encoding.Unicode.GetBytes(csv)));
+            Assert.AreEqual(csv, ConfigCsvHelper.DecodeCsvBytes(Encoding.GetEncoding(936).GetBytes(csv)));
+        }
+
+        [TestMethod]
+        public void DecodeCsvBytes_DetectsGb18030OnlyChineseCharacters()
+        {
+            var csv = "Id,ProcessName,EXEFullPath,StartupParams,OnlyOpenOnce,Minimize,NoWindow,Started,CronExpression,StopBeforeCronExec\r\n,中文𠀀服务,C:\\app.exe,,false,false,false,false,,true\r\n";
+
+            Assert.AreEqual(csv, ConfigCsvHelper.DecodeCsvBytes(Encoding.GetEncoding(54936).GetBytes(csv)));
         }
 
         [TestMethod]
