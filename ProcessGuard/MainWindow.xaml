@@ -175,10 +175,10 @@
             <UserControl x:Key="CustomCsvDialog" x:Name="CustomCsvDialog">
                 <Grid MinHeight="400">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"></RowDefinition>
                         <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="*"></RowDefinition>
                     </Grid.RowDefinitions>
-                    <DataGrid Grid.Row="0"
+                    <DataGrid Grid.Row="1"
                               ItemsSource="{Binding ConfigCsvRows}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
@@ -203,7 +203,7 @@
                             <DataGridTextColumn Width="150" Binding="{Binding StopBeforeCronExec, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource StopBeforeCron}" />
                         </DataGrid.Columns>
                     </DataGrid>
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 12 0 0">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0 0 0 8">
                         <Button x:Name="btnLoadCurrentCsv"
                                 Width="110"
                                 Margin="0 0 8 0"
