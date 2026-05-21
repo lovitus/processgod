@@ -16,6 +16,7 @@ using System.Windows.Controls;
 using System.IO.Pipes;
 using System.Linq;
 using System.Globalization;
+using System.Text;
 
 namespace ProcessGuard
 {
@@ -39,6 +40,7 @@ namespace ProcessGuard
             this.MetroDialogOptions.AnimateShow = true;
             this.MetroDialogOptions.AnimateHide = false;
             _mainWindowViewModel.ConfigItems = ConfigHelper.LoadConfigFile();
+            _mainWindowViewModel.ConfigCsvRows = ConfigCsvHelper.ToRows(_mainWindowViewModel.ConfigItems);
             _mainWindowViewModel.IsRun = _mainWindowViewModel.IsRun == true ? false : true;
             _mainWindowViewModel.GlobalConfig = ConfigHelper.LoadGlobalConfigFile();
 
@@ -142,6 +144,29 @@ namespace ProcessGuard
                     var settingDialog = new CustomDialog(this.MetroDialogOptions) { Content = this.Resources["CustomSettingDialog"], Title = string.Empty };
                     await this.ShowMetroDialogAsync(settingDialog, new MetroDialogSettings { });
                     await settingDialog.WaitUntilUnloadedAsync();
+                    break;
+
+                case "btnCsvEdit":
+                    LoadCurrentCsvRows();
+                    var csvDialog = new CustomDialog(this.MetroDialogOptions) { Content = this.Resources["CustomCsvDialog"], Title = string.Empty };
+                    await this.ShowMetroDialogAsync(csvDialog, new MetroDialogSettings { });
+                    await csvDialog.WaitUntilUnloadedAsync();
+                    break;
+
+                case "btnLoadCurrentCsv":
+                    LoadCurrentCsvRows();
+                    break;
+
+                case "btnAddCsvRow":
+                    AddCsvRow();
+                    break;
+
+                case "btnImportCsv":
+                    await ImportCsvFile();
+                    break;
+
+                case "btnExportCsv":
+                    await ExportCsvFile();
                     break;
 
                 default:
@@ -534,6 +559,137 @@ namespace ProcessGuard
                 default:
                     break;
             }
+        }
+
+        private async void CloseCsvDialog(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var dialog = button.TryFindParent<BaseMetroDialog>();
+
+            switch (button.Name)
+            {
+                case "btnSaveCsv":
+                    var result = ConfigCsvHelper.ApplyChanges(_mainWindowViewModel.ConfigItems, _mainWindowViewModel.ConfigCsvRows);
+                    if (result.Errors.Count > 0)
+                    {
+                        await this.ShowMessageAsync(
+                            FindResource("Warning").ToString(),
+                            string.Format(FindResource("CsvSaveFailed").ToString(), result.Errors.Count, FormatCsvErrors(result.Errors)),
+                            MessageDialogStyle.Affirmative,
+                            new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+                        break;
+                    }
+
+                    _mainWindowViewModel.ConfigItems = result.ConfigItems;
+                    ConfigHelper.SaveConfigs(_mainWindowViewModel.ConfigItems);
+
+                    foreach (var config in result.ServiceNotifications)
+                    {
+                        SendCommandToService(config);
+                    }
+
+                    LoadCurrentCsvRows();
+
+                    await this.ShowMessageAsync(
+                        FindResource("OK").ToString(),
+                        string.Format(
+                            FindResource("CsvSaveSucceeded").ToString(),
+                            result.AddedCount,
+                            result.UpdatedCount,
+                            result.UnchangedCount,
+                            result.ServiceNotifications.Count),
+                        MessageDialogStyle.Affirmative,
+                        new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+
+                    await this.HideMetroDialogAsync(dialog);
+                    break;
+
+                case "btnCancelCsv":
+                    await this.HideMetroDialogAsync(dialog);
+                    break;
+            }
+        }
+
+        private void LoadCurrentCsvRows()
+        {
+            _mainWindowViewModel.ConfigCsvRows = ConfigCsvHelper.ToRows(_mainWindowViewModel.ConfigItems);
+        }
+
+        private void AddCsvRow()
+        {
+            if (_mainWindowViewModel.ConfigCsvRows == null)
+            {
+                _mainWindowViewModel.ConfigCsvRows = new ObservableCollection<ConfigCsvRow>();
+            }
+
+            _mainWindowViewModel.ConfigCsvRows.Add(new ConfigCsvRow
+            {
+                LineNumber = _mainWindowViewModel.ConfigCsvRows.Count + 2,
+                Id = string.Empty,
+                ProcessName = string.Empty,
+                EXEFullPath = string.Empty,
+                StartupParams = string.Empty,
+                OnlyOpenOnce = "false",
+                Minimize = "false",
+                NoWindow = "false",
+                Started = "false",
+                CronExpression = string.Empty,
+                StopBeforeCronExec = "true",
+                Error = string.Empty
+            });
+        }
+
+        private async Task ImportCsvFile()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*"
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            var csv = File.ReadAllText(dialog.FileName, Encoding.UTF8);
+            var result = ConfigCsvHelper.Parse(csv);
+            if (result.Errors.Count > 0)
+            {
+                await this.ShowMessageAsync(
+                    FindResource("Warning").ToString(),
+                    string.Format(FindResource("CsvImportFailed").ToString(), result.Errors.Count, FormatCsvErrors(result.Errors)),
+                    MessageDialogStyle.Affirmative,
+                    new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+                return;
+            }
+
+            _mainWindowViewModel.ConfigCsvRows = new ObservableCollection<ConfigCsvRow>(result.Rows);
+        }
+
+        private async Task ExportCsvFile()
+        {
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                FileName = "GuardianConfig.csv"
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            File.WriteAllText(dialog.FileName, ConfigCsvHelper.ExportRows(_mainWindowViewModel.ConfigCsvRows), new UTF8Encoding(true));
+            await this.ShowMessageAsync(
+                FindResource("OK").ToString(),
+                FindResource("CsvExportSucceeded").ToString(),
+                MessageDialogStyle.Affirmative,
+                new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+        }
+
+        private static string FormatCsvErrors(IEnumerable<CsvValidationError> errors)
+        {
+            return string.Join(Environment.NewLine, errors.Take(20).Select(error => error.ToString()));
         }
 
         /// <summary>

@@ -19,6 +19,14 @@ namespace ProcessGuard
             set { this.Set(ref this._configItems, value); }
         }
 
+        private ObservableCollection<ConfigCsvRow> _configCsvRows;
+
+        public ObservableCollection<ConfigCsvRow> ConfigCsvRows
+        {
+            get { return _configCsvRows; }
+            set { this.Set(ref this._configCsvRows, value); }
+        }
+
         private readonly ReadOnlyObservableCollection<string> _languages = new ReadOnlyObservableCollection<string>(new ObservableCollection<string>
         {
             "English",

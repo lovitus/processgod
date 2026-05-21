@@ -181,6 +181,82 @@
                             mah:ControlsHelper.ContentCharacterCasing="Normal"></Button>
                 </Grid>
             </UserControl>
+            <UserControl x:Key="CustomCsvDialog" x:Name="CustomCsvDialog">
+                <Grid MinWidth="820" MinHeight="430">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"></RowDefinition>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <DataGrid Grid.Row="0"
+                              ItemsSource="{Binding ConfigCsvRows}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="True"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              RowHeaderWidth="0"
+                              MinHeight="340"
+                              Style="{DynamicResource MahApps.Styles.DataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Width="50" IsReadOnly="True" Binding="{Binding LineNumber}" Header="#" />
+                            <DataGridTextColumn Width="180" IsReadOnly="True" Binding="{Binding Error}" Header="{DynamicResource CsvError}" />
+                            <DataGridTextColumn Width="220" Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}" Header="Id" />
+                            <DataGridTextColumn Width="140" Binding="{Binding ProcessName, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource ProcessName}" />
+                            <DataGridTextColumn Width="260" Binding="{Binding EXEFullPath, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource FullPath}" />
+                            <DataGridTextColumn Width="180" Binding="{Binding StartupParams, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource Parameters}" />
+                            <DataGridTextColumn Width="110" Binding="{Binding OnlyOpenOnce, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource StartOnce}" />
+                            <DataGridTextColumn Width="90" Binding="{Binding Minimize, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource Minimize}" />
+                            <DataGridTextColumn Width="90" Binding="{Binding NoWindow, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource NoWindow}" />
+                            <DataGridTextColumn Width="90" Binding="{Binding Started, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource CsvStarted}" />
+                            <DataGridTextColumn Width="160" Binding="{Binding CronExpression, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource CronExpression}" />
+                            <DataGridTextColumn Width="150" Binding="{Binding StopBeforeCronExec, UpdateSourceTrigger=PropertyChanged}" Header="{DynamicResource StopBeforeCron}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 12 0 0">
+                        <Button x:Name="btnLoadCurrentCsv"
+                                Width="110"
+                                Margin="0 0 8 0"
+                                Content="{DynamicResource CsvLoadCurrent}"
+                                Click="Button_Click"
+                                Style="{DynamicResource MahApps.Styles.Button.Square}"
+                                mah:ControlsHelper.ContentCharacterCasing="Normal" />
+                        <Button x:Name="btnAddCsvRow"
+                                Width="90"
+                                Margin="0 0 8 0"
+                                Content="{DynamicResource CsvAddRow}"
+                                Click="Button_Click"
+                                Style="{DynamicResource MahApps.Styles.Button.Square}"
+                                mah:ControlsHelper.ContentCharacterCasing="Normal" />
+                        <Button x:Name="btnImportCsv"
+                                Width="90"
+                                Margin="0 0 8 0"
+                                Content="{DynamicResource CsvImport}"
+                                Click="Button_Click"
+                                Style="{DynamicResource MahApps.Styles.Button.Square}"
+                                mah:ControlsHelper.ContentCharacterCasing="Normal" />
+                        <Button x:Name="btnExportCsv"
+                                Width="90"
+                                Margin="0 0 8 0"
+                                Content="{DynamicResource CsvExport}"
+                                Click="Button_Click"
+                                Style="{DynamicResource MahApps.Styles.Button.Square}"
+                                mah:ControlsHelper.ContentCharacterCasing="Normal" />
+                        <Button x:Name="btnSaveCsv"
+                                Width="90"
+                                Margin="0 0 8 0"
+                                Content="{DynamicResource Save}"
+                                Click="CloseCsvDialog"
+                                Style="{DynamicResource MahApps.Styles.Button.Square.Accent}"
+                                mah:ControlsHelper.ContentCharacterCasing="Normal" />
+                        <Button x:Name="btnCancelCsv"
+                                Width="90"
+                                Content="{DynamicResource Cancel}"
+                                Click="CloseCsvDialog"
+                                Style="{DynamicResource MahApps.Styles.Button.Square}"
+                                mah:ControlsHelper.ContentCharacterCasing="Normal" />
+                    </StackPanel>
+                </Grid>
+            </UserControl>
         </ResourceDictionary>
     </Window.Resources>
     <Grid>
@@ -358,6 +434,7 @@
                             <ColumnDefinition Width="30" />
                             <ColumnDefinition Width="30" />
                             <ColumnDefinition Width="30" />
+                            <ColumnDefinition Width="30" />
                         </Grid.ColumnDefinitions>
                     </Grid>
                 </ItemsPanelTemplate>
@@ -450,6 +527,18 @@
                     <iconPacks:PackIconModern Width="18"
                                               Height="18"
                                               Kind="Minus"/>
+                </Button>
+            </StatusBarItem>
+            <StatusBarItem Grid.Column="7">
+                <Button x:Name="btnCsvEdit" Width="23"
+                        Height="23"
+                        Margin="0"
+                        Style="{StaticResource AccentCircleButtonStyle}"
+                        ToolTip="{DynamicResource CsvConfig}"
+                        Click="Button_Click">
+                    <iconPacks:PackIconModern Width="14"
+                                              Height="14"
+                                              Kind="PageNew"/>
                 </Button>
             </StatusBarItem>
         </StatusBar>

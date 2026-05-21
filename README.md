@@ -20,11 +20,17 @@ With the ability to start a process from the Windows service, we can:
 
 ## ⚙Configuration Interface
 
-> You can download the program directly from the [Release](https://github.com/KamenRiderKuuga/ProcessGuard/releases) page. The interface you see is just a configuration interface for configuring the processes to be guarded here. After starting the service, you can close the configuration interface
+> You can download the program directly from the [Release](https://github.com/lovitus/processgod/releases) page. The interface you see is just a configuration interface for configuring the processes to be guarded here. After starting the service, you can close the configuration interface
 
 ![](https://lambda.cyou/assets/img/processguard-5.PNG)
 
 Note: The configuration can take effect only after the service is started
+
+### CSV Batch Editing
+
+The configuration UI now includes a CSV editor for backup-friendly batch changes. Use the CSV button in the status bar to open the editable table, export the current process configuration to CSV, import an edited CSV file, or save changes directly from the table.
+
+CSV editing keeps the JSON configuration file as the source used by the app and service. When saving, unchanged rows are ignored, changed rows are updated, and rows with a blank or previously unknown valid `Id` are added. Rows that are missing from the CSV are not deleted. If the service is running, only the rows that need to take effect are sent through the existing service command channel; the service is not restarted.
 
 
 
@@ -41,6 +47,10 @@ Note: The configuration can take effect only after the service is started
 **Minimize:** For programs with an interactive interface, it can make it minimized to the taskbar when it starts, instead of popping up the interface as usual
 
 **NoWindow:** For console applications, enabling this item can make it start like a windows service, without displaying the console at all
+
+**Cron Schedule:** Optional 5-field cron expression used to restart a guarded process on schedule. Leave it empty when **Start Once** is enabled.
+
+**Stop Before Cron:** Controls whether the currently running process tree is stopped before a cron-triggered execution.
 
 
 
