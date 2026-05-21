@@ -78,6 +78,7 @@ namespace ProcessGuard
             {
                 case nameof(btnAdd):
                     var dialog = new CustomDialog(this.MetroDialogOptions) { Content = this.Resources["CustomAddDialog"], Title = string.Empty };
+                    dialog.DialogContentMargin = new GridLength(10);
                     _mainWindowViewModel.SelectedId = Guid.NewGuid().ToString("N");
                     _mainWindowViewModel.SelectedFile = string.Empty;
                     _mainWindowViewModel.SeletedProcessName = string.Empty;
@@ -142,6 +143,7 @@ namespace ProcessGuard
 
                 case nameof(btnSetting):
                     var settingDialog = new CustomDialog(this.MetroDialogOptions) { Content = this.Resources["CustomSettingDialog"], Title = string.Empty };
+                    settingDialog.DialogContentMargin = new GridLength(10);
                     await this.ShowMetroDialogAsync(settingDialog, new MetroDialogSettings { });
                     await settingDialog.WaitUntilUnloadedAsync();
                     break;
@@ -149,6 +151,7 @@ namespace ProcessGuard
                 case "btnCsvEdit":
                     LoadCurrentCsvRows();
                     var csvDialog = new CustomDialog(this.MetroDialogOptions) { Content = this.Resources["CustomCsvDialog"], Title = string.Empty };
+                    csvDialog.DialogContentMargin = new GridLength(0);
                     await this.ShowMetroDialogAsync(csvDialog, new MetroDialogSettings { });
                     await csvDialog.WaitUntilUnloadedAsync();
                     break;
@@ -203,6 +206,7 @@ namespace ProcessGuard
             if (currentRow != null)
             {
                 var dialog = new CustomDialog(this.MetroDialogOptions) { Content = this.Resources["CustomAddDialog"], Title = string.Empty };
+                dialog.DialogContentMargin = new GridLength(10);
 
                 _mainWindowViewModel.SelectedId = currentRow.Id;
                 _mainWindowViewModel.SelectedFile = currentRow.EXEFullPath;
@@ -569,37 +573,49 @@ namespace ProcessGuard
             switch (button.Name)
             {
                 case "btnSaveCsv":
-                    var result = ConfigCsvHelper.ApplyChanges(_mainWindowViewModel.ConfigItems, _mainWindowViewModel.ConfigCsvRows);
-                    if (result.Errors.Count > 0)
+                    try
+                    {
+                        var result = ConfigCsvHelper.ApplyChanges(_mainWindowViewModel.ConfigItems, _mainWindowViewModel.ConfigCsvRows);
+                        if (result.Errors.Count > 0)
+                        {
+                            await this.ShowMessageAsync(
+                                FindResource("Warning").ToString(),
+                                string.Format(FindResource("CsvSaveFailed").ToString(), result.Errors.Count, FormatCsvErrors(result.Errors)),
+                                MessageDialogStyle.Affirmative,
+                                new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+                            break;
+                        }
+
+                        _mainWindowViewModel.ConfigItems = result.ConfigItems;
+                        ConfigHelper.SaveConfigs(_mainWindowViewModel.ConfigItems);
+
+                        foreach (var config in result.ServiceNotifications)
+                        {
+                            SendCommandToService(config);
+                        }
+
+                        LoadCurrentCsvRows();
+
+                        await this.ShowMessageAsync(
+                            FindResource("OK").ToString(),
+                            string.Format(
+                                FindResource("CsvSaveSucceeded").ToString(),
+                                result.AddedCount,
+                                result.UpdatedCount,
+                                result.UnchangedCount,
+                                result.ServiceNotifications.Count),
+                            MessageDialogStyle.Affirmative,
+                            new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+                    }
+                    catch (Exception ex)
                     {
                         await this.ShowMessageAsync(
                             FindResource("Warning").ToString(),
-                            string.Format(FindResource("CsvSaveFailed").ToString(), result.Errors.Count, FormatCsvErrors(result.Errors)),
+                            string.Format(FindResource("CsvSaveException").ToString(), ex.Message),
                             MessageDialogStyle.Affirmative,
                             new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
                         break;
                     }
-
-                    _mainWindowViewModel.ConfigItems = result.ConfigItems;
-                    ConfigHelper.SaveConfigs(_mainWindowViewModel.ConfigItems);
-
-                    foreach (var config in result.ServiceNotifications)
-                    {
-                        SendCommandToService(config);
-                    }
-
-                    LoadCurrentCsvRows();
-
-                    await this.ShowMessageAsync(
-                        FindResource("OK").ToString(),
-                        string.Format(
-                            FindResource("CsvSaveSucceeded").ToString(),
-                            result.AddedCount,
-                            result.UpdatedCount,
-                            result.UnchangedCount,
-                            result.ServiceNotifications.Count),
-                        MessageDialogStyle.Affirmative,
-                        new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
 
                     await this.HideMetroDialogAsync(dialog);
                     break;
@@ -651,19 +667,30 @@ namespace ProcessGuard
                 return;
             }
 
-            var csv = File.ReadAllText(dialog.FileName, Encoding.UTF8);
-            var result = ConfigCsvHelper.Parse(csv);
-            if (result.Errors.Count > 0)
+            try
+            {
+                var csv = ReadCsvFile(dialog.FileName);
+                var result = ConfigCsvHelper.Parse(csv);
+                if (result.Errors.Count > 0)
+                {
+                    await this.ShowMessageAsync(
+                        FindResource("Warning").ToString(),
+                        string.Format(FindResource("CsvImportFailed").ToString(), result.Errors.Count, FormatCsvErrors(result.Errors)),
+                        MessageDialogStyle.Affirmative,
+                        new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+                    return;
+                }
+
+                _mainWindowViewModel.ConfigCsvRows = new ObservableCollection<ConfigCsvRow>(result.Rows);
+            }
+            catch (Exception ex)
             {
                 await this.ShowMessageAsync(
                     FindResource("Warning").ToString(),
-                    string.Format(FindResource("CsvImportFailed").ToString(), result.Errors.Count, FormatCsvErrors(result.Errors)),
+                    string.Format(FindResource("CsvImportException").ToString(), ex.Message),
                     MessageDialogStyle.Affirmative,
                     new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
-                return;
             }
-
-            _mainWindowViewModel.ConfigCsvRows = new ObservableCollection<ConfigCsvRow>(result.Rows);
         }
 
         private async Task ExportCsvFile()
@@ -679,17 +706,41 @@ namespace ProcessGuard
                 return;
             }
 
-            File.WriteAllText(dialog.FileName, ConfigCsvHelper.ExportRows(_mainWindowViewModel.ConfigCsvRows), new UTF8Encoding(true));
-            await this.ShowMessageAsync(
-                FindResource("OK").ToString(),
-                FindResource("CsvExportSucceeded").ToString(),
-                MessageDialogStyle.Affirmative,
-                new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+            try
+            {
+                File.WriteAllText(dialog.FileName, ConfigCsvHelper.ExportRows(_mainWindowViewModel.ConfigCsvRows), new UTF8Encoding(true));
+                await this.ShowMessageAsync(
+                    FindResource("OK").ToString(),
+                    FindResource("CsvExportSucceeded").ToString(),
+                    MessageDialogStyle.Affirmative,
+                    new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+            }
+            catch (Exception ex)
+            {
+                await this.ShowMessageAsync(
+                    FindResource("Warning").ToString(),
+                    string.Format(FindResource("CsvExportException").ToString(), ex.Message),
+                    MessageDialogStyle.Affirmative,
+                    new MetroDialogSettings { AffirmativeButtonText = FindResource("OK").ToString(), AnimateShow = false, AnimateHide = false });
+            }
         }
 
         private static string FormatCsvErrors(IEnumerable<CsvValidationError> errors)
         {
             return string.Join(Environment.NewLine, errors.Take(20).Select(error => error.ToString()));
+        }
+
+        private static string ReadCsvFile(string fileName)
+        {
+            byte[] bytes;
+            using (var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            using (var memory = new MemoryStream())
+            {
+                stream.CopyTo(memory);
+                bytes = memory.ToArray();
+            }
+
+            return ConfigCsvHelper.DecodeCsvBytes(bytes);
         }
 
         /// <summary>

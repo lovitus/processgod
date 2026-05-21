@@ -56,15 +56,12 @@
                         <RowDefinition></RowDefinition>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="120"></ColumnDefinition>
-                        <ColumnDefinition MaxWidth="30"></ColumnDefinition>
-                        <ColumnDefinition MinWidth="120"></ColumnDefinition>
-                        <ColumnDefinition MaxWidth="120"></ColumnDefinition>
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Right" Text="{DynamicResource FullPathOfExecutable}" />
                     <TextBox Margin="10 0" Grid.Row="0"
                              Grid.Column="1"
-                             Grid.ColumnSpan="3"
                              mah:TextBoxHelper.Watermark="{DynamicResource InputOrSelectTheFullPath}"
                              Text="{Binding SelectedFile,
                                             ValidatesOnDataErrors=True, 
@@ -81,7 +78,6 @@
                     <TextBlock Margin="0 16 0 0" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Right" Text="{DynamicResource ProcessName}" />
                     <TextBox Margin="10 16 10 0" Grid.Row="1" 
                              Grid.Column="1" 
-                             Grid.ColumnSpan="3"
                              Style="{StaticResource MahApps.Styles.TextBox}" 
                              VerticalAlignment="Center"
                              Text="{Binding SeletedProcessName,
@@ -97,7 +93,6 @@
                     <TextBlock Margin="0 16 0 0" Grid.Row="5" VerticalAlignment="Center" HorizontalAlignment="Right" Text="{DynamicResource Parameters}" />
                     <TextBox Margin="10 16 10 0" Grid.Row="5"
                              Grid.Column="1"
-                             Grid.ColumnSpan="3"
                              mah:TextBoxHelper.Watermark="{DynamicResource CanBeLeftBlank}"
                              Text="{Binding StartupParams,
                                             UpdateSourceTrigger=PropertyChanged}"
@@ -107,7 +102,6 @@
                     <TextBlock Margin="0 16 0 0" Grid.Row="6" VerticalAlignment="Center" HorizontalAlignment="Right" Text="{DynamicResource CronExpression}" />
                     <TextBox Margin="10 16 10 0" Grid.Row="6"
                              Grid.Column="1"
-                             Grid.ColumnSpan="3"
                              mah:TextBoxHelper.Watermark="{DynamicResource CronWatermark}"
                              IsEnabled="{Binding IsCronEnabled}"
                              Text="{Binding CronExpression,
@@ -117,37 +111,36 @@
                              Style="{DynamicResource MahApps.Styles.TextBox}" 
                              VerticalAlignment="Center">
                     </TextBox>
-                    <TextBlock Margin="10 16 10 0" Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="4" VerticalAlignment="Center" HorizontalAlignment="Left" TextWrapping="Wrap" Opacity="0.7" Text="process get killed when cron is triggered, (cron use as restart, by default, restart it at 1am everyday)" />
-                    <Button x:Name="btnConfirmAdd" Margin="10" Grid.Row="8" Grid.Column="2" 
-                            HorizontalAlignment="Right" 
-                            Width="80" 
-                            VerticalAlignment="Center"
-                            Click="CloseCustomDialog"
-                            mah:ControlsHelper.ContentCharacterCasing="Normal">
-                        <Button.Style>
-                            <Style TargetType="{x:Type ButtonBase}" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Path=IsNew}" Value="True">
-                                        <Setter Property="Content" Value="{DynamicResource ConfirmAdd}" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Path=IsNew}" Value="False">
-                                        <Setter Property="Content" Value="{DynamicResource ConfirmChanges}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                    <Button x:Name="btnCancelAdd" 
-                            Margin="10"
-                            Grid.Row="8"
-                            Grid.Column="3"
-                            HorizontalAlignment="Right" 
-                            Width="80" 
-                            VerticalAlignment="Center" 
-                            Content="{DynamicResource Cancel}"
-                            Style="{DynamicResource MahApps.Styles.Button.Square.Accent}"
-                            Click="CloseCustomDialog"
-                            mah:ControlsHelper.ContentCharacterCasing="Normal"></Button>
+                    <TextBlock Margin="10 16 10 0" Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Left" TextWrapping="Wrap" Opacity="0.7" Text="process get killed when cron is triggered, (cron use as restart, by default, restart it at 1am everyday)" />
+                    <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
+                                Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 12 0 0">
+                        <Button x:Name="btnConfirmAdd"
+                                Width="80"
+                                Margin="0 0 8 0"
+                                VerticalAlignment="Center"
+                                Click="CloseCustomDialog"
+                                mah:ControlsHelper.ContentCharacterCasing="Normal">
+                            <Button.Style>
+                                <Style TargetType="{x:Type ButtonBase}" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Path=IsNew}" Value="True">
+                                            <Setter Property="Content" Value="{DynamicResource ConfirmAdd}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Path=IsNew}" Value="False">
+                                            <Setter Property="Content" Value="{DynamicResource ConfirmChanges}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button x:Name="btnCancelAdd"
+                                Width="80"
+                                VerticalAlignment="Center"
+                                Content="{DynamicResource Cancel}"
+                                Style="{DynamicResource MahApps.Styles.Button.Square.Accent}"
+                                Click="CloseCustomDialog"
+                                mah:ControlsHelper.ContentCharacterCasing="Normal"/>
+                    </StackPanel>
                 </Grid>
             </UserControl>
             <UserControl x:Key="CustomSettingDialog" x:Name="CustomSettingDialog">
@@ -157,13 +150,11 @@
                         <RowDefinition></RowDefinition>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="120"></ColumnDefinition>
-                        <ColumnDefinition MaxWidth="30"></ColumnDefinition>
-                        <ColumnDefinition MinWidth="120"></ColumnDefinition>
-                        <ColumnDefinition MaxWidth="120"></ColumnDefinition>
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Right" Text="{DynamicResource Language}" />
-                    <ComboBox Margin="10 0" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" VerticalAlignment="Center"
+                    <ComboBox Margin="10 0" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
                               ItemsSource="{Binding Languages}"
                               SelectedValue="{Binding Path=GlobalConfig.Language}"
                               SelectionChanged="LanguageComboBox_SelectionChanged">
@@ -171,7 +162,7 @@
                     <Button x:Name="btnOK" 
                             Margin="10"
                             Grid.Row="1"
-                            Grid.Column="3"
+                            Grid.Column="1"
                             HorizontalAlignment="Right" 
                             Width="80" 
                             VerticalAlignment="Center" 
@@ -182,7 +173,7 @@
                 </Grid>
             </UserControl>
             <UserControl x:Key="CustomCsvDialog" x:Name="CustomCsvDialog">
-                <Grid MinWidth="820" MinHeight="430">
+                <Grid MinHeight="400">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"></RowDefinition>
                         <RowDefinition Height="Auto"></RowDefinition>
